@@ -67,8 +67,3 @@ scholarships available to provide further financial support.
 Feel free to contact Wouter Swierstra (w.s.swierstra {at} uu.nl) if
 you have any questions about participating.
 
-#### Sponsorship
-
-The Summer School is generously sponsored by Standard Chartered Bank.
-
-![Standard Chartered](img/standard-chartered.png)
