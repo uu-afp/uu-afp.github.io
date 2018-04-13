@@ -67,3 +67,10 @@ scholarships available to provide further financial support.
 Feel free to contact Wouter Swierstra (w.s.swierstra {at} uu.nl) if
 you have any questions about participating.
 
+
+#### Sponsorship
+
+We gratefully acknowledge Standard Chartered Bank for their
+sponsorship.
+
+![logo](img/standard-chartered.png)
