@@ -11,8 +11,8 @@ Each set of exercises cover a set of related topics from the lectures.
 
 * [Monads, transformers, applicatives](as1.html)
 * [Type-level programming](as2.html) (GADTs, generic programming)
-* Laziness and performance
-* Parser combinators
+* [Tools and laziness](as3.html)
+* [A simple database](as4.html) (parsing, monads, I/O validation)
 
 ### Even more exercises
 
