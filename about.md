@@ -18,8 +18,7 @@ theory and practice of Haskell programming, including topics such as:
 * monads and monad transformers;
 * lazy evaluation;
 * generalized algebraic data types;
-* type families and type-level programming;
-* concurrency and parallelism.
+* type families and type-level programming.
 
 The summer school consists of a mix of lectures, labs and a busy
 social program. You may want to check out the preliminary
