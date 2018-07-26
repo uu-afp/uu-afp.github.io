@@ -7,11 +7,21 @@ layout: margins
 
 ## Labs
 
+Each set of exercises cover a set of related topics from the lectures.
+
+* [Monads, transformers, applicatives](as1.html)
+* [Type-level programming](as2.html) (GADTs, generic programming)
+* Laziness and performance
+* Parser combinators
+
+### Even more exercises
+
 We have collected a lot of different exercises related to Functional Programming
 in Haskell in a [big PDF](assignments.pdf). The exercises are categorized
 by difficulty level and topic. Feel free to work on any of them, and ask
 any question that may arise during the lab sessions.
 
+<!--
 ### Exercises per session
 
 Here is a list of exercises which we recommend in order to put into practice
@@ -74,3 +84,4 @@ the content of each session.
     </tr>
 
   </table>
+-->
