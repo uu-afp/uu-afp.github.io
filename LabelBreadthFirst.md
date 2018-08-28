@@ -1,3 +1,10 @@
+---
+title: Breadth-first labelling
+layout: margins
+---
+
+# Solution to the breadth first labelling problem
+
 ```haskell
 data Tree a = Leaf
             | Node (Tree a) a (Tree a)
