@@ -69,7 +69,14 @@ you have any questions about participating.
 
 #### Sponsorship
 
-We gratefully acknowledge Standard Chartered Bank for their
-sponsorship.
+We gratefully acknowledge Standard Chartered Bank and Jane Street
+Capital for their sponsorship.
 
-![logo](img/standard-chartered.png)
+<div style="text-align:center">
+
+<img width="200" src="img/standard-chartered.png"/>
+
+&nbsp; &nbsp; &nbsp;
+
+<img width="200" src="img/jane-street.png"/>
+</div>
