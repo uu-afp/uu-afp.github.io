@@ -79,4 +79,9 @@ Capital for their sponsorship.
 &nbsp; &nbsp; &nbsp;
 
 <img width="200" src="img/jane-street.png"/>
+
+&nbsp; &nbsp; &nbsp;
+
+<img width="200" src="img/logo-tweag.svg"/>
+
 </div>
