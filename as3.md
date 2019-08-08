@@ -7,12 +7,22 @@ layout: margins
 
 ## Tools and laziness
 
-Here is a list of exercises related to nested data types, GADTs,
-and generic programming.
+Here is a list of exercises related to project management,
+testing, and laziness.
 
+* [Packaging](#packaging)
 * [Smooth permutations](#smooth-permutations)
 * [Heap profiles](#heap-profiles)
 * [Forcing evaluation](#forcing-evaluation)
+
+### Packaging
+
+The file [`Game.hs`](Game.hs) implements a small guessing game, all in one file. You can run it using `runghc Game.hs` on the terminal prompt. The goal of this first exercise is to turn this file into a proper Cabal project:
+
+1. Initialize a project with one executable stanza.
+2. Separate the pure part of the game (data type declarations and functions `next` and `step`) into a separate module, which should be imported by the `Main` module.
+3. If you use Stack, initialize also the `stack.yaml` file.
+4. Run the game using Cabal or Stack.
 
 ### Smooth permutations
 
