@@ -13,6 +13,7 @@ Each set of exercises cover a set of related topics from the lectures.
 * [Type-level programming](as2.html) (GADTs, generic programming)
 * [Tools and laziness](as3.html)
 * [A simple database](as4.html) (parsing, monads, I/O validation)
+* [Lambda calculus](LambdaCalculus.hs)
 
 ### Even more exercises
 
