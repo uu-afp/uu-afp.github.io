@@ -7,7 +7,7 @@ layout: margins
 
 #### General
 
-The *Applied Functional Programming* summer school has been running
+The *Advanced Functional Programming* summer school has been running
 for more than eight years. We aim to educate aspiring Haskell
 programmers beyond the basic material covered by many textbooks.
 
