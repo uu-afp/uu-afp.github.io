@@ -8,7 +8,7 @@ layout: margins
 #### General
 
 The *Advanced Functional Programming* summer school has been running
-for more than eight years. We aim to educate aspiring Haskell
+for more than ten years. We aim to educate aspiring Haskell
 programmers beyond the basic material covered by many textbooks.
 
 The lectures will cover several more advanced topics regarding the
@@ -24,7 +24,7 @@ The summer school consists of a mix of lectures, labs and a busy
 social program. You may want to check out the preliminary
 [schedule](schedule.html) to get some idea of what to expect.
 
-The school will run from August 26&ndash;30, 2019.
+The school will run from July 6&ndash;10, 2020.
 
 #### For whom
 
@@ -67,21 +67,21 @@ Feel free to contact Wouter Swierstra (w.s.swierstra {at} uu.nl) if
 you have any questions about participating.
 
 
-#### Sponsorship
+<!-- #### Sponsorship -->
 
-We gratefully acknowledge Standard Chartered Bank and Jane Street
-Capital for their sponsorship.
+<!-- We gratefully acknowledge Standard Chartered Bank and Jane Street -->
+<!-- Capital for their sponsorship. -->
 
-<div style="text-align:center">
+<!-- <div style="text-align:center"> -->
 
-<img width="200" src="img/standard-chartered.png"/>
+<!-- <img width="200" src="img/standard-chartered.png"/> -->
 
-&nbsp; &nbsp; &nbsp;
+<!-- &nbsp; &nbsp; &nbsp; -->
 
-<img width="200" src="img/jane-street.png"/>
+<!-- <img width="200" src="img/jane-street.png"/> -->
 
-&nbsp; &nbsp; &nbsp;
+<!-- &nbsp; &nbsp; &nbsp; -->
 
-<img width="200" src="img/logo-tweag.svg"/>
+<!-- <img width="200" src="img/logo-tweag.svg"/> -->
 
-</div>
+<!-- </div> -->
