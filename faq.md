@@ -5,6 +5,15 @@ layout: margins
 
 ## Frequently asked questions
 
+#### What about the pandemic?
+
+We are currently carefully monitoring the situation around the
+COVID-19 pandemic. At the moment, it is hard to predict what the
+situation will be once the school is scheduled to start. We currently
+still intend to run the school -- but this may still change over the
+coming weeks. The Summer School does allow you to cancel your
+registration at any time and receive a full refund.
+
 #### Do I need to be enrolled at a university to attend?
 
 No! The course is open to all participants. We can offer students or
