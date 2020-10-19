@@ -24,7 +24,7 @@ The summer school consists of a mix of lectures, labs and a busy
 social program. You may want to check out the preliminary
 [schedule](schedule.html) to get some idea of what to expect.
 
-The school will run from July 6&ndash;10, 2020.
+The school will run from July 5&ndash;9, 2021.
 
 #### For whom
 
