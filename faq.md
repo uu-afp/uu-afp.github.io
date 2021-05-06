@@ -21,7 +21,7 @@ pattern matching and algebraic data types. There are many good
 resources available introducing these basics -- feel free to contact
 the lecturers if you're unsure about your prerequisites.
 
-### How will the sessions be run?
+#### How will the sessions be run?
 
 We will (most likely) use MS Teams for our lectures, together with
 labs hosted virtually in gather.town. We will send an email with more
