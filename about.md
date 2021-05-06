@@ -15,9 +15,9 @@ The lectures will cover several more advanced topics regarding the
 theory and practice of Haskell programming, including topics such as:
 
 * lambda calculus;
-* monads and monad transformers;
-* lazy evaluation;
-* generalized algebraic data types;
+* monads and applicative functors;
+* generalized algebraic datatypes;
+* datatype generic programming;
 * type families and type-level programming.
 
 The summer school consists of a mix of lectures, labs and a busy
@@ -41,25 +41,19 @@ summer school.
 
 #### Venue
 
-The lectures and labs will be held on the Utrecht Science Park (also
-known as *de Uithof*) in the BBL building. Many of the social events
-will be in the city center, but there are regular buses and you might
-want to consider renting a bicycle.
+The lecture and lab sessions will be run online. We will have live
+lectures in the (European) afternoon, but recordings will be made
+available if this does not work for you. There will be supervised labs
+to help you practice with the material from the lectures, also held
+online.
 
 #### Costs
 
-* €1700 - Course, course materials and housing
-* €1500 - Course and course materials 
-
-This registration fee should cover almost all of your expenses in the
-entire week. All lunches, coffee, and dinners will be covered.
-
-If you are a student or affiliated with a university, we can offer a
-€1000 euro discount on your registration fee.
-
-If you are keen to attend the summer school, but unable to finance
-your stay, you may contact the organizers. We have a limited number of
-scholarships available to provide further financial support.
+We ask for a small registration fee of €50 to help cover the costs of
+running the summer school. If you are keen to attend the summer
+school, but unable to pay the registration fee, please contact the
+organizers. We are more than happy to waive the fee, if this makes
+your participation difficult.
 
 #### Questions?
 
