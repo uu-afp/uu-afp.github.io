@@ -41,19 +41,21 @@ summer school.
 
 #### Venue
 
-The lecture and lab sessions will be run online. We will have live
-lectures in the (European) afternoon, but recordings will be made
-available if this does not work for you. There will be supervised labs
-to help you practice with the material from the lectures, also held
-online.
+The lecture and lab sessions will be run in person in Utrecht. At the
+moment, we are not planning to offer hybrid lectures or remote
+attendance&emdash;but we are monitoring developments surrounding the
+pandemic closely.
+
 
 #### Costs
 
-We ask for a small registration fee of €50 to help cover the costs of
-running the summer school. If you are keen to attend the summer
-school, but unable to pay the registration fee, please contact the
-organizers. We are more than happy to waive the fee, if this makes
-your participation difficult.
+We charge a registration fee of €250 (for students) and €750 (for
+professionals). There is an additional housing fee of €200 euros, if
+you need accommodation in Utrecht. Note that this registration fee
+includes course materials, coffee, lunches and dinners throughout the
+week. If the registration fee is problematic for you *for any reason
+at all*, please email the organisers and we can try to offer you a
+discounted rate or a fee waiver.
 
 #### Questions?
 
