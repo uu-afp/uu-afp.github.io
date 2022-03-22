@@ -24,7 +24,7 @@ The summer school consists of a mix of lectures, labs and a busy
 social program. You may want to check out the preliminary
 [schedule](schedule.html) to get some idea of what to expect.
 
-The school will run from July 5&ndash;9, 2021.
+The school will run from 04 July &ndash; 08 July 2022.
 
 #### For whom
 
@@ -59,6 +59,11 @@ your participation difficult.
 
 Feel free to contact Wouter Swierstra (w.s.swierstra {at} uu.nl) if
 you have any questions about participating.
+
+#### Credits
+
+The pictures used on the landing page are by Pieter Dorp van Vliet and
+Hans Splinter.
 
 
 <!-- #### Sponsorship -->

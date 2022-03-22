@@ -44,6 +44,22 @@ table {border-spacing: 2px;}
     width: auto;
 }
 
+.navbar {
+  color:#000000;
+  background-color:#FFCD00;
+
+}
+
+.navbar-inverse {
+    border-color:#FFCD00;
+}
+.navbar-inverse .navbar-nav > li > a {
+  color: #000000;
+}
+
+.navbar-inverse .navbar-brand {
+  color: #000000;
+}
 
 /* CUSTOMIZE THE CAROUSEL
 -------------------------------------------------- */
