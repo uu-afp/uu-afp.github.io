@@ -60,10 +60,6 @@ your participation difficult.
 Feel free to contact Wouter Swierstra (w.s.swierstra {at} uu.nl) if
 you have any questions about participating.
 
-#### Credits
-
-The pictures used on the landing page are by Pieter Dorp van Vliet and
-Hans Splinter.
 
 
 <!-- #### Sponsorship -->
