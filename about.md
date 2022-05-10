@@ -26,6 +26,8 @@ social program. You may want to check out the preliminary
 
 The school will run from 04 July &ndash; 08 July 2022.
 
+We kindly ask to register **before June 17th**.
+
 #### For whom
 
 We expect students to have a basic familiarity with Haskell
@@ -43,7 +45,7 @@ summer school.
 
 The lecture and lab sessions will be run in person in Utrecht. At the
 moment, we are not planning to offer hybrid lectures or remote
-attendance&emdash;but we are monitoring developments surrounding the
+attendance&mdash;but we are monitoring developments surrounding the
 pandemic closely.
 
 
