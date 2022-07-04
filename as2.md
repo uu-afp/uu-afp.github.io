@@ -1,302 +1,364 @@
 ---
-title: Labs - Type-level programming
+title: Labs - Monads, transformers, applicatives
 layout: margins
 ---
 
 &nbsp;
 
-## Type-level programming
+## Monads, transformers, applicatives
 
-Here is a list of exercises related to nested data types, GADTs,
-and generic programming.
+Here is a list of exercises related to monads, monad transformers,
+applicatives, foldables, and traversables.
 
-* [Contracts](#contracts)
-* [Nested data types](#nested-data-types)
-* [Generic parsing](#generic-parsing)
+* [Some instances](#some-instances-and-utilities)
+* [Monads for a gambling game](#monads-for-a-gambling-game)
+* [Instrumented `State` monad](#instrumented-state-monad)
+* [Parsing with error messages](#parsing-with-error-messages)
+  using monad transformers
+* [Teletype IO](#teletype-io)
 
-### Contracts
+### Some instances and utilities
 
-Here is a datatype of contracts:
-
-```haskell
-data Contract :: * -> * where
-  Pred :: (a -> Bool) -> Contract a
-  Fun  :: Contract a -> Contract b -> Contract (a -> b)
-```
-
-A contract can be a predicate for a value of arbitrary  type. For  functions, we
-offer contracts that contain a precondition on the arguments, and a postcondition
-on the results.
-
-Contracts can be attached to values by means of `assert`. The idea is that
-`assert` will cause run-time failure if a contract is violated, and otherwise
-return the original result:
+Given the standard type classes for functors, applicative functors and
+monads:
 
 ```haskell
-assert :: Contract a -> a -> a
-assert (Pred p)       x = if p x then x else error "contract violation"
-assert (Fun pre post) f = assert post . f . assert pre
+class Functor f where
+  fmap :: (a -> b) -> f a -> f b
+
+class Functor f => Applicative f where
+  pure :: a -> f a
+  (<*>) :: f (a -> b) -> f a -> f b
+  
+class Applicative f => Monad f where
+  return :: a -> f a
+  (>>=) :: f a -> (a -> f b) -> f b
 ```
 
-For  function  contracts,  we first check the precondition on the value, then apply
-the original function, and finally check the postcondition on the result. 
-Note that the case for `Fun` makes use of the fact that the `Fun`
-constructor targets only function contracts. Because of this knowledge, GHC
-allows us to apply `f` as a function.
-
-For example, the following contract states that a number is positive:
+Give instances for all three classes for the following data types:
 
 ```haskell
-pos :: (Num a, Ord a) => Contract a
-pos = Pred (> 0)
+data Tree a = Leaf a | Node (Tree a) (Tree a)
+
+data RoseTree a = RoseNode a [RoseTree a] | RoseLeaf
 ```
 
-We have
+#### Foldable and traversable
+
+Also give instances for the `Foldable` and `Traversable` classes, 
+whenever possible:
 
 ```haskell
-assert pos 2 == 2
-assert pos 0 == ⊥ (contract violation error)
+class Foldable t where
+  foldMap :: Monoid m => (a -> m) -> t a -> m 
+  
+class Traversable t where
+  traverse :: Applicative f => (a -> f b) -> t a -> f (t b) 
 ```
 
-**Exercise 1:** Define a contract
+#### Maps and keys
+
+Using only methods from the above type classes and `lookup`, show how to
+define the following function:
 
 ```haskell
-true :: Contract a
+lookupAll :: Ord k => [k] -> Data.Map k v -> Maybe [v]
 ```
 
-such that for all values `x`, the equation
+This should return `Just vs` if all the argument keys occur in the
+map, and `Nothing` otherwise.
+
+Also define the following variant:
 
 ```haskell
-assert true x == x
+lookupSome :: Ord k => [k] -> Data.Map k v -> [v]
 ```
 
-holds.  Prove this equation using equational reasoning.
+that returns the list of values for which a key exists. You may want
+to use functions from `Data.Maybe` to complete this definition.
 
-Often, we want the postcondition of a function to be able to refer to the actual
-argument that has been passed to the function. Therefore, let us change the type
-of `Fun`:
+#### Filter
+
+Use `foldMap` to define a generic filter function:
 
 ```haskell
-DFun :: Contract a -> (a -> Contract b) -> Contract (a -> b)
+gfilter :: Foldable f => (a -> Bool) -> f a -> [a]
 ```
 
-The postcondition now depends on the function argument.
+### Monads for a gambling game
 
-**Exercise 2:** Adapt the function `assert` to the new type of `DFun`.
+Here's a game I like to play:  I toss a coin six times and count the number of
+heads I see, then I roll a dice; if the number of eyes on the dice is greater
+than or equal to the number of heads I counted then I win, else I lose. 
+As I'm somewhat of a sore loser, I'd  like to know my chances of winning
+beforehand, though. There are three ways to compute this probability:
 
-**Exercise 3:** Define a combinator
+1. Use a pen, paper (or, if you prefer, chalk and a blackboard) and some basic
+   discrete probability theory to calculate the probability directly.
+2. Draw or compute the complete decision tree of the game and count the number
+   of wins and losses.
+3. Write a computer program that simulates the game to approximate the probability.
+
+We'll leave the first option to the mathematicians and focus on the second and
+third possibilities. In fact, using monads, we'll see how both can be done at
+the same time.
+
+#### The `Gambling` Monad
+
+Modeling a coin and a dice in Haskell shouldn't pose much difficulty for you:
 
 ```haskell
-(==>) :: Contract a -> Contract b -> Contract (a -> b)
+data Coin    = H | T
+data Dice    = D1 | D2 | D3 | D4 | D5 | D6
+data Outcome = Win | Lose
 ```
 
-that reexpresses the behaviour of the old `Fun` constructor in terms of the new
-and more general one.
-
-**Exercise 4:** Define a contract suitable for the list index function
-`(!!)`, i.e., a contract of type `Contract ([a] -> Int -> a)`
-that checks if the integer is a valid index for the given list.
-
-**Exercise 5:** Define a contract
+The tossing of a `Coin` and rolling of a `Dice` is given by the monadic interface
+`MonadGamble`:
 
 ```haskell
-preserves :: Eq b => (a -> b) -> Contract (a -> a)
+class Monad m => MonadGamble m where
+  toss :: m Coin
+  roll :: m Dice
 ```
 
-where `assert (preserves p) f x` fails if and only if the value of
-`p x` is different from the value of `p (f x)`. Examples:
+**Exercise 1:** Write a function `game :: MonadGamble m => m Outcome`
+that implements the game above. Read the description of the game very carefully:
+it is easy to make an off-by-one error; furthermore, as tossing and rolling are
+side-effects the order in which you perform them matters.
+
+#### Simulation
+
+Simulating probabilistic events requires a (pseudo)random number generator.
+Haskell has one available in the `System.Random` library. Random number
+generators need to have access to a piece of state called the seed, as such
+the random number generator runs in a monad, the `IO` monad to be exact.
+
+**Exercise 2:** Give `Random` instances for `Coin` and `Dice`.
+
+**Exercise 3:** Give a `MonadGamble` instance for the `IO` monad.
+
+**Exercise 4:** Write a function
 
 ```haskell
-assert (preserves length) reverse  "Hello"       == "olleH"
-assert (preserves length) (take 5) "Hello"       == "Hello"
-assert (preserves length) (take 5) "Hello world" == ⊥
+simulate :: IO Outcome -> Integer -> IO Rational
 ```
 
-**Exercise 6:** Consider
+that runs a game of chance (given as the first parameter, not necessarily the
+game implemented in Exercise 1) $n$ times($n > 0$, the second parameter)
+and returns the fraction of games won. You can now approximate to probability
+of winning using `simulate game 10000`.
+Would you care to take a guess what the exact probability of winning is?
+
+#### Decision trees
+One drawback of simulation is that the answer is only approximate.  We can
+obtain an exact answer using decision trees. Decision trees of probabilistic
+games can be modeled as:
 
 ```haskell
-preservesPos  = preserves (>0)
-preservesPos' = pos ==> pos
+data DecisionTree a = Result a | Decision [DecisionTree a]
 ```
 
-Is there a difference between `assert preservesPos` and
-`assert preservesPos'`? If yes, give an example where they show different
-behaviour.  If not, try to prove their equality using equational reasoning.
+In the leaves we store the result and in each branch we can take one of several
+possibilities. As we don't store the probabilities of each decision, we'll have
+to assume they are uniformly distributed (i.e., each possibility has an equally
+great possibility of being taken). Fortunately for us, both fair coins and fair
+dice produce a uniform distribution.
 
-We can add another contract constructor:
+**Exercise 5:** Give a `Monad` instance for `DecisionTree`. (Hint: use the types
+of `(>>=)` and `return` for guidance: it's the most straightforward,
+type-correct definition that isn't an infinite loop.
+
+**Exercise 6:** Give a `MonadGamble` instance for `DecisionTree`.
+
+**Exercise 7:** Write a function
 
 ```haskell
-List :: Contract a -> Contract [a]
+probabilityOfWinning :: DecisionTree Outcome -> Rational
 ```
 
-The corresponding case of `assert` is as follows:
+that, given a decision tree, computes the probability of winning. You can find
+the exact probability of winning using `probabilityOfWinning game`. Was
+your earlier guess correct? If you know a bit of probability theory, you can
+double check the correctness by doing the pen-and-paper calculation suggested above.
+Note that we used the same implementation of `game` to obtain both an approximate and
+an exact answer.
+
+### Instrumented `State` monad
+
+A state monad is monad with additional monadic operations `get` and `put`:
 
 ```haskell
-assert (List c) xs = map (assert c) xs
+class Monad m => MonadState m s | m -> s where
+  get    ::             m s
+  put    :: s        -> m ()
+  modify :: (s -> s) -> m s
 ```
 
-**Exercise 7:** Consider
+Apart from the usual three monad laws, state monads should also satisfy:
 
 ```haskell
-allPos  = List pos
-allPos' = Pred (all (> 0))
+put s1 >> put s2               == put s2
+put s  >> get                  == put s >> return s
+get    >>= put                 == return ()
+get    >>= (\s -> get >>= k s) == get >>= (\s -> k s s)
 ```
 
-Describe the differences between `assert allPos` and `assert allPos'`,
-and more generally between using `List` versus using `Pred`
-to describe a predicate on lists. 
-(Hint: Think carefully and consider different situations before giving your
-answer. What about using the `allPos` and `allPos'` contracts as parts of
-other contracts? What about lists of functions? What about infinite lists? 
-What about strict and non-strict functions working on lists?)
+Check to see if you understand what these four laws say and if they make sense.
 
-### Nested data types
+**Exercise 1:** Give default implementations of `get` and `put` in terms of
+`modify`, and a default implementation of `modify` in terms of `get` and `put`.
 
-Here is a nested data type for square matrices:
+#### Instrumentation
+
+We are now going to define our own, slightly modified state monad that, besides
+keeping track of a piece of state, has also been instrumented to count the
+number of `(>>=)`, `return`, `get` and `put` operations that have been performed
+during a monadic computation. The counts are given by the type:
 
 ```haskell
-type Square      = Square' Nil  -- note that it is eta-reduced
-data Square' t a = Zero (t (t a)) | Succ (Square' (Cons t) a)
-
-data Nil    a = Nil
-data Cons t a = Cons a (t a)
+data Counts = Counts { binds   :: Int
+                     , returns :: Int
+                     , gets    :: Int
+                     , puts    :: Int
+                     }
 ```
 
-**Exercise 1.** Give Haskell code that represents the following two square matrices as elements of the `Square` data type:
-
-$$
-\begin{pmatrix}
-1 & 0 \\
-0 & 1
-\end{pmatrix}
-\quad
-\begin{pmatrix}
-1 & 2 & 3 \\
-4 & 5 & 6 \\
-7 & 8 & 9
-\end{pmatrix}
-$$
-
-Let's investigate how we can derive an equality function on square matrices. We do so very systematically by deriving an equality function for each of the four types. We follow a simple, yet powerful principle: type abstraction corresponds to term abstraction, and type application corresponds to term application.
-
-What does this mean? If a type `f` is parameterized over an argument `a`, then in general, we have to know how equality is defined on `a` in order to define equality on `f a`. Therefore we define
+**Exercise 2:** As a convenience, give a `Monoid` instance for `Count`
+that sums the counts pairwise. Define constants
 
 ```haskell
-eqNil :: (a -> a -> Bool) -> (Nil a -> Nil a -> Bool)
-eqNil eqA Nil Nil = True
+oneBind, oneReturn, oneGet, onePut :: Counts
 ```
 
-In this case, the `a` is not used in the definition of `Nil` , so it is not surprising that we do not use `eqA` in the definition of `eqNil`.  But what about `Cons`?  The data type `Cons` has two arguments `t` and `a`, so we expect two arguments to be passed to `eqCons`, something like
+that represent a count of one `(>>=)`, `return`, `get` and `put` operation,
+respectively.
+
+Our state transformer is now given by:
 
 ```haskell
-eqCons eqT eqA (Cons x xs) (Cons y ys) = eqA x y && ...
+newtype State' s a = State' { runState' :: (s, Counts) -> (a, s, Counts) }
 ```
 
-But what should the type of `eqT` be? The `t` is of kind `* -> *`, so it can't be `t -> t -> Bool`. We can argue that we should use `t a -> t a -> Bool`, because we use `t` applied to `a` in the definition of `Cons`. However, a better solution is to recognise that, being a type constructor of kind `* -> *`, an equality function on `t` should take an equality function on its argument as a parameter. And, moreover, it does not matter what this parameter is! A function like `eqNil` is polymorphic in type `a`, so let us require that `eqT` is polymorphic in the argument type as well:
+In addition to the usual state `s`, we keep track of the `Counts`
+as an internal piece of state that is not exposed through the `get`
+and `put` interface.
+
+**Exercise 3:** Give `Monad` and `MonadState` instances for `State'`
+that count the number of `(>>=)`, `return`, `get` and `put` operations.
+
+#### Tree labeling
+
+Here is a data type for binary trees that store values on the internal nodes only.
 
 ```haskell
-eqCons :: (forall b . (b -> b -> Bool) -> (t b -> t b -> Bool))
-       -> (a -> a -> Bool)
-       -> (Cons t a -> Cons t a -> Bool)
-eqCons eqT eqA (Cons x xs) (Cons y ys) = eqA x y && eqT eqA xs ys
+data Tree a = Branch (Tree a) a (Tree a) | Leaf
 ```
 
-Now you can see how we apply `eqT` to `eqA` when we want equality at type `t a` -- the type application corresponds to term application.
-
-**Exercise 2.** A type with a `forall` on the inside requires the extension `RankNTypes` to be enabled. Try to understand what the difference is between a function of the type of `eqCons` and a function with the same type but the `forall` omitted. Can you omit the `forall` in the case of `eqCons` and does the function still work?
-
-Now, on to `Square'`. The type of `eqSquare'` follows exactly the same idea as the type of `eqCons`:
+**Exercise 4:** Write a function
 
 ```haskell
-eqSquare' :: (forall b . (b -> b -> Bool) -> (t b -> t b -> Bool))
-          -> (a -> a -> Bool)
-          -> (Square' t a -> Square' t a -> Bool)
+label :: MonadState m Int => Tree a -> m (Tree (Int, a))
 ```
 
-We now for the first time have more than one constructor, so we actually have to give multiple cases. Let us first consider comparing two applications of `Zero`:
+that labels a tree with integers increasingly, using a depth-first in-order traversal.
+
+**Exercise 5:** Write a function
 
 ```haskell
-eqSquare' eqT eqA (Zero xs) (Zero ys) = eqT (eqT eqA) xs ys
+run :: State' s a -> s -> (a, Counts)
 ```
 
-Note how again the structure of the definition follows the structure of the type.  We have a value of type `t (t a)`. We compare it using `eqT`, passing it an equality function for values of type `t a`. How? By using `eqT eqA`. The remaining cases are as follows:
+that runs a state monadic computation in the instrumented state monad, given
+some initial state of type `s`, and returns the computed value and the number of
+ operations counted. For example, the expression
 
 ```haskell
-eqSquare' eqT eqA (Succ xs) (Succ ys) = eqSquare' (eqCons eqT) eqA xs ys
-eqSquare' eqT eqA _         _         = False
+let tree = Branch (Branch Leaf "B" Leaf) "A" Leaf
+in  run (label tree) 42
 ```
 
-The idea is the same -- let the structure of the recursive calls follow the structure of the type.
-
-**Exercise 3.** Again, try removing the `forall` from the type of `eqSquare'`.  Does the function still
-type check? Try to explain!
-
-Now we're done:
+should evaluate to
 
 ```haskell
-eqSquare :: (a -> a -> Bool) -> Square a -> Square a -> Bool
-eqSquare = eqSquare' eqNil
+( Branch (Branch Leaf (42, "B") Leaf) (43, "A") Leaf
+, Counts { binds = 10, returns = 5, gets = 4, puts = 2 } )
 ```
 
-Test the function.  We can now also give an `Eq` instance for `Square` -- this requires the minor language  extension `TypeSynonymInstances`, because Haskell 98 does not allow type synonyms like `Square` to be used in  instance declarations:
+### Parsing with error messages
 
-```
-instance Eq a => Eq (Square a) where
-  (==) = eqSquare (==)
-```
-
-
-**Exercise 4.** Systematically follow the scheme just presented in order to define a `Functor` instance for square matrices. I.e., derive a function `mapSquare` such that you can define
+Instead of *backtracking* parsers covered in the lectures,
+we can also define the following parser type:
 
 ```haskell
-instance Functor Square where
-  fmap = mapSquare
+newtype ErrorMsg = ErrorMsg String
+newtype Parser a = Parser (String -> Either ErrorMsg (a,String))
 ```
 
-This instance requires `Square` to be defined in eta-reduced form in the beginning, because Haskell does not allow partially applied type synonyms. If we had defined `Square` differently
+A parser consists of a function that reads from a `String` to produce
+either an error message or a result of type `a` and the remaining
+`String` that has not been parsed. This parser type does not allow
+*backtracking* and is less expressive than the list-based parsers.
+
+**Exercise 1:** 
+Write the `Functor`, `Applicative`, `Monad`, and `Alternative` instances
+for the parser type above.
+
+**Exercise 2:**
+Describe the `Parser` type as a series of monad transformers.
+
+### Teletype IO
+
+Consider the following data type:
 
 ```haskell
-type Square a = Square' Nil a
+data Teletype a = End a
+                | Get (Char -> Teletype a)
+                | Put Char (Teletype a)
 ```
 
-we cannot make `Square` an instance of the class `Functor`.
+A value of type `Teletype` can be used to describe programs that read and write characters and return a final result of type `a`. Such a program can end immediately (`End`).  If it reads a character, the rest of the program is described as a function depending on this character (`Get`).  If the program writes a character (`Put`), the value to show and the rest of the program are recorded.
 
-**Exercise 5.** Why is this restriction in place? Try to find problems arising from partially applied type synonyms, and describe them (as concisely as possible) with a few examples.
+For example, the following expression describes a program that continuously echo characters:
 
-## Generic parsing
+```haskell
+echo = Get (\c -> Put c echo)
+```
 
-Haskell's `Show` and `Read` classes provide an easy way to display and
-parse user-defined data structures.
+**Exercise 1.** Write a `Teletype`-program `getLine` which reads characters until it finds a newline character, and returns the complete string.
 
-Use GHC Generics and some parsing library (`uuparsinglib`, `attoparsec`
-or `parsec`),  define a *generic*
-`Parse` class. You may want to have a look at `Generic.Deriving.Show`
-to see how a generic `Show` instance can be derived. 
+A map function for `Teletype` can be defined as follows:
 
-Writing a generic read for all possible constructs is not feasible,
-but try to cover as much of the language as you can.
+```haskell
+instance Functor Teletype where
+  fmap f (End x)   = End (f x)
+  fmap f (Get g)   = Get (fmap f . g)
+  fmap f (Put c x) = Put c (fmap f x)
+```
 
-* Start by handling only "basic" ADTs. To make it more precise, this means that it works for:
+**Exercise 2.** Define sensible `Applicative` and `Monad` instances for `Teletype`.
 
-    ```haskell
-    data Bool    = True | False
-    data IntTree = Leaf Int | Node IntTree IntTree
-    ```
+The definition of `Teletype` is not directly compatible with `do` notation. Usually, you have `getChar` and `putChar` primitives which allow you to write instead:
 
-* Then take fixity of operators is taken into account.
-    To make it more precise, that means that the parser can handle
-    `Leaf 1 :|: (Leaf 2 :|: Leaf 3)` when `IntTree` is declared as:
+```haskell
+echo = do c <- getChar
+          putChar c
+          echo
+```
 
-    ```haskell
-    data IntTree = Leaf Int | IntTree :|: IntTree
-    ```
+**Exercise 3.** Define those functions `getChar :: Teletype Char` and `putChar :: Char -> Teletype ()`.
 
-* Finally, support record labels.
-    To make it more precise, that means that the parser can handle
-    `Number { n = 1 }`  for a data type declared as:
+**Exercise 4.** Define a [`MonadState`](https://hackage.haskell.org/package/mtl/docs/Control-Monad-State-Class.html#t:MonadState) instance for `Teletype`. How is the behavior of this instance different from the usual `State` type?
 
-    ```haskell
-    data Number = Number { n :: Int }
-    ```
+**Exercise 5.** A `Teletype`-program can be thought as a description of an interaction with the console. Write a function `runConsole :: Teletype a -> IO a` which runs a `Teletype`-program in the `IO` monad. A `Get` should read a character from the console and `Put` should write a character to the console.
 
-What cases cannot be handled without backtracking?
+One of the advantages of separating the description of `Teletype`-programs from their executions is that we can *interpret* them in different ways. For example, the communication might take place throught a network instead of console. Or we could mock user input and output for testing purposes.
+
+**Exercise 6.** Write an interpretation of a `Teletype`-program into the monad `RWS [Char] () [Char]` ([documentation](https://hackage.haskell.org/package/transformers/docs/Control-Monad-Trans-RWS-Lazy.html)). In other words, write a function,
+
+```haskell
+type TeletypeRW = RWS [Char] () [Char]
+runRWS :: Teletype a -> TeletypeRW a
+```
+
+Using it, write a function `mockConsole :: Teletype a -> [Char] -> (a, [Char])`.

@@ -1,187 +1,302 @@
 ---
-title: Labs - Tools and laziness
+title: Labs - Type-level programming
 layout: margins
 ---
 
 &nbsp;
 
-## Tools and laziness
+## Type-level programming
 
-Here is a list of exercises related to project management,
-testing, and laziness.
+Here is a list of exercises related to nested data types, GADTs,
+and generic programming.
 
-* [Packaging](#packaging)
-* [Smooth permutations](#smooth-permutations)
-* [Heap profiles](#heap-profiles)
-* [Forcing evaluation](#forcing-evaluation)
+* [Contracts](#contracts)
+* [Nested data types](#nested-data-types)
+* [Generic parsing](#generic-parsing)
 
-### Packaging
+### Contracts
 
-The file [`Game.hs`](Game.hs) implements a small guessing game, all in one file. You can run it using `runghc Game.hs` on the terminal prompt. The goal of this first exercise is to turn this file into a proper Cabal project:
-
-1. Initialize a project with one executable stanza.
-2. Separate the pure part of the game (data type declarations and functions `next` and `step`) into a separate module, which should be imported by the `Main` module.
-3. If you use Stack, initialize also the `stack.yaml` file.
-4. Run the game using Cabal or Stack.
-
-### Smooth permutations
-
-In this assignment we want to build a library to generate smooth permutations. Given a list of integers `xs` and an integer `d`, a _smooth permutation of `xs` with maximum distance `d`_ is a permutation in which the difference of any two consecutive elements is at most `d`. A naïve implementation just generates all the permutations of a list,
+Here is a datatype of contracts:
 
 ```haskell
-split []     = []
-split (x:xs) = (x, xs) : [(y, x:ys) | (y, ys) <- split xs]
-
-perms []     = [[]]
-perms xs     = [(v:p) | (v, vs) <- split xs, p <- perms vs]
+data Contract :: * -> * where
+  Pred :: (a -> Bool) -> Contract a
+  Fun  :: Contract a -> Contract b -> Contract (a -> b)
 ```
 
-and then filters out those which are smooth,
+A contract can be a predicate for a value of arbitrary  type. For  functions, we
+offer contracts that contain a precondition on the arguments, and a postcondition
+on the results.
+
+Contracts can be attached to values by means of `assert`. The idea is that
+`assert` will cause run-time failure if a contract is violated, and otherwise
+return the original result:
 
 ```haskell
-smooth n (x:y:ys) = abs (y - x) < n && smooth n (y:ys)
-smooth _ _        = True
-
-smoothPerms :: Int -> [Int] -> [[Int]]
-smoothPerms n xs = filter (smooth n) (perms xs)
+assert :: Contract a -> a -> a
+assert (Pred p)       x = if p x then x else error "contract violation"
+assert (Fun pre post) f = assert post . f . assert pre
 ```
 
-**Exercise 1:** *Packaging and documentation*
+For  function  contracts,  we first check the precondition on the value, then apply
+the original function, and finally check the postcondition on the result. 
+Note that the case for `Fun` makes use of the fact that the `Fun`
+constructor targets only function contracts. Because of this knowledge, GHC
+allows us to apply `f` as a function.
 
-1. Create a library `smoothies` which exports `perms` and `smoothPerms` from a module `SmoothPermsSlow`. You should be able to install the package by just running `cabal install` in it.
-2. Document the exported functions using [Haddock](http://haskell-haddock.readthedocs.io/en/latest/index.html).
-
-**Exercise 2:** *Testsuite*
-
-1. Write a `SmothPermsTest` module with a comprehensive set of properties to check that `smoothPerms` works correctly.
-2. Integrate your testsuite with Cabal using `tasty` ([here is how you do so](https://github.com/feuerbach/tasty#project-organization-and-integration-with-cabal)).
-
-**Exercise 3:** *Implementation with trees*
-
-The initial implementation of `smoothPerms` is very expensive. A better approach is to build a tree, for which it holds that each path from the root to a leaf corresponds to one of the possible permutations, next prune this tree such that only smooth paths are represented, and finally use this tree to generate all the smooth permutations from. Expose this new implementation in a new `SmoothPermsTree` module.
-
-1. Define a data type `PermTree` to represented a permutation tree.
-2. Define a function `listToPermTree` which maps a list onto this tree.
-3. Define a function `permTreeToPerms` which generates all permutations represented by a tree.
-
-    At this point the `perms` functions given above should be the composition of `listToPermTree` and `permTreeToPerms`.
-
-4. Define a function `pruneSmooth`, which leaves only smooth permutations in the tree.
-5. Redefine the function `smoothPerms`.
-
-Integrate this module in the testsuite you developed in the previous exercise.
-
-**Exercise 4:** *Unfolds*
-
-Recall the definition of `unfoldr` for lists,
+For example, the following contract states that a number is positive:
 
 ```haskell
-unfoldr :: (s -> Maybe (a, s)) -> s -> [a]
-unfoldr next x = case next x of
-                   Nothing     -> []
-                   Just (y, r) -> y : unfoldr next r
+pos :: (Num a, Ord a) => Contract a
+pos = Pred (> 0)
 ```
 
-We can define an unfold function for binary trees as well:
+We have
 
 ```haskell
-data Tree a = Leaf a | Node (Tree a) (Tree a)
-            deriving Show
-
-unfoldTree :: (s -> Either a (s, s)) -> s -> Tree a
-unfoldTree next x = case next x of
-                      Left  y      -> Leaf y
-                      Right (l, r) -> Node (unfoldTree next l) (unfoldTree next r)
+assert pos 2 == 2
+assert pos 0 == ⊥ (contract violation error)
 ```
 
-Define the following functions in a new module `UnfoldUtils`, which should *not* be exposed by your package. Define the functions using `unfoldr` or `unfoldTree`, as required.
+**Exercise 1:** Define a contract
 
-1. `iterate :: (a -> a) -> a -> [a]`. The call `iterate f x` generates the infinite list `[x, f x, f (f x), ...]`.
-2. `map :: (a -> b) -> [a] -> [b]`.
-3. `balanced :: Int -> Tree ()`, which generates a balanced binary tree of the given height.
-4. `sized :: Int -> Tree Int`, which generates any tree with the given number of nodes. Each leaf in the returned tree should have a unique label.
+```haskell
+true :: Contract a
+```
 
-Define a new module `SmoothPermsUnfold` with an `unfoldPermTree` function which generates a `PermTree` as defined in the previous exercise. Then use that `unfoldPermTree` to implement a new version of `listToPermTree` and `smoothPerms`.
+such that for all values `x`, the equation
 
-**(Optional)** Write the following proofs as comments in the `UnfoldUtils` module.
+```haskell
+assert true x == x
+```
 
-1. Prove using induction and equational reasoning that the version of `map` you defined using `unfoldr` coincides with the definition of `map` by recursion.
-2. We define the `size` of a binary tree as the number of internal nodes.
+holds.  Prove this equation using equational reasoning.
+
+Often, we want the postcondition of a function to be able to refer to the actual
+argument that has been passed to the function. Therefore, let us change the type
+of `Fun`:
+
+```haskell
+DFun :: Contract a -> (a -> Contract b) -> Contract (a -> b)
+```
+
+The postcondition now depends on the function argument.
+
+**Exercise 2:** Adapt the function `assert` to the new type of `DFun`.
+
+**Exercise 3:** Define a combinator
+
+```haskell
+(==>) :: Contract a -> Contract b -> Contract (a -> b)
+```
+
+that reexpresses the behaviour of the old `Fun` constructor in terms of the new
+and more general one.
+
+**Exercise 4:** Define a contract suitable for the list index function
+`(!!)`, i.e., a contract of type `Contract ([a] -> Int -> a)`
+that checks if the integer is a valid index for the given list.
+
+**Exercise 5:** Define a contract
+
+```haskell
+preserves :: Eq b => (a -> b) -> Contract (a -> a)
+```
+
+where `assert (preserves p) f x` fails if and only if the value of
+`p x` is different from the value of `p (f x)`. Examples:
+
+```haskell
+assert (preserves length) reverse  "Hello"       == "olleH"
+assert (preserves length) (take 5) "Hello"       == "Hello"
+assert (preserves length) (take 5) "Hello world" == ⊥
+```
+
+**Exercise 6:** Consider
+
+```haskell
+preservesPos  = preserves (>0)
+preservesPos' = pos ==> pos
+```
+
+Is there a difference between `assert preservesPos` and
+`assert preservesPos'`? If yes, give an example where they show different
+behaviour.  If not, try to prove their equality using equational reasoning.
+
+We can add another contract constructor:
+
+```haskell
+List :: Contract a -> Contract [a]
+```
+
+The corresponding case of `assert` is as follows:
+
+```haskell
+assert (List c) xs = map (assert c) xs
+```
+
+**Exercise 7:** Consider
+
+```haskell
+allPos  = List pos
+allPos' = Pred (all (> 0))
+```
+
+Describe the differences between `assert allPos` and `assert allPos'`,
+and more generally between using `List` versus using `Pred`
+to describe a predicate on lists. 
+(Hint: Think carefully and consider different situations before giving your
+answer. What about using the `allPos` and `allPos'` contracts as parts of
+other contracts? What about lists of functions? What about infinite lists? 
+What about strict and non-strict functions working on lists?)
+
+### Nested data types
+
+Here is a nested data type for square matrices:
+
+```haskell
+type Square      = Square' Nil  -- note that it is eta-reduced
+data Square' t a = Zero (t (t a)) | Succ (Square' (Cons t) a)
+
+data Nil    a = Nil
+data Cons t a = Cons a (t a)
+```
+
+**Exercise 1.** Give Haskell code that represents the following two square matrices as elements of the `Square` data type:
+
+$$
+\begin{pmatrix}
+1 & 0 \\
+0 & 1
+\end{pmatrix}
+\quad
+\begin{pmatrix}
+1 & 2 & 3 \\
+4 & 5 & 6 \\
+7 & 8 & 9
+\end{pmatrix}
+$$
+
+Let's investigate how we can derive an equality function on square matrices. We do so very systematically by deriving an equality function for each of the four types. We follow a simple, yet powerful principle: type abstraction corresponds to term abstraction, and type application corresponds to term application.
+
+What does this mean? If a type `f` is parameterized over an argument `a`, then in general, we have to know how equality is defined on `a` in order to define equality on `f a`. Therefore we define
+
+```haskell
+eqNil :: (a -> a -> Bool) -> (Nil a -> Nil a -> Bool)
+eqNil eqA Nil Nil = True
+```
+
+In this case, the `a` is not used in the definition of `Nil` , so it is not surprising that we do not use `eqA` in the definition of `eqNil`.  But what about `Cons`?  The data type `Cons` has two arguments `t` and `a`, so we expect two arguments to be passed to `eqCons`, something like
+
+```haskell
+eqCons eqT eqA (Cons x xs) (Cons y ys) = eqA x y && ...
+```
+
+But what should the type of `eqT` be? The `t` is of kind `* -> *`, so it can't be `t -> t -> Bool`. We can argue that we should use `t a -> t a -> Bool`, because we use `t` applied to `a` in the definition of `Cons`. However, a better solution is to recognise that, being a type constructor of kind `* -> *`, an equality function on `t` should take an equality function on its argument as a parameter. And, moreover, it does not matter what this parameter is! A function like `eqNil` is polymorphic in type `a`, so let us require that `eqT` is polymorphic in the argument type as well:
+
+```haskell
+eqCons :: (forall b . (b -> b -> Bool) -> (t b -> t b -> Bool))
+       -> (a -> a -> Bool)
+       -> (Cons t a -> Cons t a -> Bool)
+eqCons eqT eqA (Cons x xs) (Cons y ys) = eqA x y && eqT eqA xs ys
+```
+
+Now you can see how we apply `eqT` to `eqA` when we want equality at type `t a` -- the type application corresponds to term application.
+
+**Exercise 2.** A type with a `forall` on the inside requires the extension `RankNTypes` to be enabled. Try to understand what the difference is between a function of the type of `eqCons` and a function with the same type but the `forall` omitted. Can you omit the `forall` in the case of `eqCons` and does the function still work?
+
+Now, on to `Square'`. The type of `eqSquare'` follows exactly the same idea as the type of `eqCons`:
+
+```haskell
+eqSquare' :: (forall b . (b -> b -> Bool) -> (t b -> t b -> Bool))
+          -> (a -> a -> Bool)
+          -> (Square' t a -> Square' t a -> Bool)
+```
+
+We now for the first time have more than one constructor, so we actually have to give multiple cases. Let us first consider comparing two applications of `Zero`:
+
+```haskell
+eqSquare' eqT eqA (Zero xs) (Zero ys) = eqT (eqT eqA) xs ys
+```
+
+Note how again the structure of the definition follows the structure of the type.  We have a value of type `t (t a)`. We compare it using `eqT`, passing it an equality function for values of type `t a`. How? By using `eqT eqA`. The remaining cases are as follows:
+
+```haskell
+eqSquare' eqT eqA (Succ xs) (Succ ys) = eqSquare' (eqCons eqT) eqA xs ys
+eqSquare' eqT eqA _         _         = False
+```
+
+The idea is the same -- let the structure of the recursive calls follow the structure of the type.
+
+**Exercise 3.** Again, try removing the `forall` from the type of `eqSquare'`.  Does the function still
+type check? Try to explain!
+
+Now we're done:
+
+```haskell
+eqSquare :: (a -> a -> Bool) -> Square a -> Square a -> Bool
+eqSquare = eqSquare' eqNil
+```
+
+Test the function.  We can now also give an `Eq` instance for `Square` -- this requires the minor language  extension `TypeSynonymInstances`, because Haskell 98 does not allow type synonyms like `Square` to be used in  instance declarations:
+
+```
+instance Eq a => Eq (Square a) where
+  (==) = eqSquare (==)
+```
+
+
+**Exercise 4.** Systematically follow the scheme just presented in order to define a `Functor` instance for square matrices. I.e., derive a function `mapSquare` such that you can define
+
+```haskell
+instance Functor Square where
+  fmap = mapSquare
+```
+
+This instance requires `Square` to be defined in eta-reduced form in the beginning, because Haskell does not allow partially applied type synonyms. If we had defined `Square` differently
+
+```haskell
+type Square a = Square' Nil a
+```
+
+we cannot make `Square` an instance of the class `Functor`.
+
+**Exercise 5.** Why is this restriction in place? Try to find problems arising from partially applied type synonyms, and describe them (as concisely as possible) with a few examples.
+
+## Generic parsing
+
+Haskell's `Show` and `Read` classes provide an easy way to display and
+parse user-defined data structures.
+
+Use GHC Generics and some parsing library (`uuparsinglib`, `attoparsec`
+or `parsec`),  define a *generic*
+`Parse` class. You may want to have a look at `Generic.Deriving.Show`
+to see how a generic `Show` instance can be derived. 
+
+Writing a generic read for all possible constructs is not feasible,
+but try to cover as much of the language as you can.
+
+* Start by handling only "basic" ADTs. To make it more precise, this means that it works for:
 
     ```haskell
-    size (Leaf _)   = 0
-    size (Node l r) = 1 + size l + size r
+    data Bool    = True | False
+    data IntTree = Leaf Int | Node IntTree IntTree
     ```
 
-    What is the `size` of a balanced tree as generated by `balanced`? Prove your result using induction and equational reasoning.
+* Then take fixity of operators is taken into account.
+    To make it more precise, that means that the parser can handle
+    `Leaf 1 :|: (Leaf 2 :|: Leaf 3)` when `IntTree` is declared as:
 
-**Exercise 5:** *Performance*
+    ```haskell
+    data IntTree = Leaf Int | IntTree :|: IntTree
+    ```
 
-1. Use the `criterion` package to make and run benchmarks for the given naïve
-    solution and the implementations using trees and unfolds,
-    in order to find out whether your solution really gives higher performance.
-2. Use heap profiles to analyse and draw conclusions about the differences.
+* Finally, support record labels.
+    To make it more precise, that means that the parser can handle
+    `Number { n = 1 }`  for a data type declared as:
 
-### Heap profiles
+    ```haskell
+    data Number = Number { n :: Int }
+    ```
 
-**Exercise 1:** Generate heap profiles for the following functions:
-
-```haskell
-rev  = foldl (flip (:)) []
-rev' = foldr (\x r -> r ++ [x]) []
-```
-
-by using them as function `f` in a main program as follows
-
-```haskell
-main = print $ f [1 .. 1000000]
-```
-
-(adapt the size of 1000000 according to the speed of your machine to get good
-results). Interpret and try to explain the results!
-
-**Exercise 2:** Do the same for
-
-```haskell
-conc xs ys = foldr (:) ys xs
-conc'      = foldl (\k x -> k . (x:)) id
-```
-
-with
-
-```haskell
-main = print $ f [1 .. 1000000] [1 .. 1000000]
-```
-
-**Exercise 3:** Finally, have a look at
-
-```haskell
-f1 = let xs == [1 .. 1000000] in if length xs > 0 then head xs else 0
-f2 = if length [1 .. 1000000] > 0 then head [1 .. 1000000] else 0
-```
-
-### Forcing evaluation
-
-Write a function
-
-```haskell
-forceBoolList :: [Bool] -> r -> r
-```
-
-that completely forces a list of booleans without using `seq`. 
-Note that pattern matching drives evaluation.
-
-Explain why the function `forceBoolList` has the type as specified above and not
-
-```haskell
-forceBoolList :: [Bool] -> [Bool]
-```
-
-and why `seq` is defined as it is, and
-
-```haskell
-force :: a -> a
-force a = seq a a
-```
-
-is useless.
+What cases cannot be handled without backtracking?

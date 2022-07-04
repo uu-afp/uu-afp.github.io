@@ -9,9 +9,9 @@ layout: margins
 
 Each set of exercises cover a set of related topics from the lectures.
 
-* [Monads, transformers, applicatives](as1.html)
-* [Type-level programming](as2.html) (GADTs, generic programming)
-* [Tools and laziness](as3.html)
+* [Tools and laziness](as1.html)
+* [Monads, transformers, applicatives](as2.html)
+* [Type-level programming](as3.html) (GADTs, generic programming)
 * [A simple database](as4.html) (parsing, monads, I/O validation)
 * [Lambda calculus](LambdaCalculus.hs)
 

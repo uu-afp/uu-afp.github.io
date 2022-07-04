@@ -1,364 +1,187 @@
 ---
-title: Labs - Monads, transformers, applicatives
+title: Labs - Tools and laziness
 layout: margins
 ---
 
 &nbsp;
 
-## Monads, transformers, applicatives
+## Tools and laziness
 
-Here is a list of exercises related to monads, monad transformers,
-applicatives, foldables, and traversables.
+Here is a list of exercises related to project management,
+testing, and laziness.
 
-* [Some instances](#some-instances-and-utilities)
-* [Monads for a gambling game](#monads-for-a-gambling-game)
-* [Instrumented `State` monad](#instrumented-state-monad)
-* [Parsing with error messages](#parsing-with-error-messages)
-  using monad transformers
-* [Teletype IO](#teletype-io)
+* [Packaging](#packaging)
+* [Smooth permutations](#smooth-permutations)
+<!-- * [Heap profiles](#heap-profiles) -->
+<!-- * [Forcing evaluation](#forcing-evaluation) -->
 
-### Some instances and utilities
+### Packaging
 
-Given the standard type classes for functors, applicative functors and
-monads:
+The file [`Game.hs`](Game.hs) implements a small guessing game, all in one file. You can run it using `runghc Game.hs` on the terminal prompt. The goal of this first exercise is to turn this file into a proper Cabal project:
+
+1. Initialize a project with one executable stanza.
+2. Separate the pure part of the game (data type declarations and functions `next` and `step`) into a separate module, which should be imported by the `Main` module.
+3. If you use Stack, initialize also the `stack.yaml` file.
+4. Run the game using Cabal or Stack.
+
+### Smooth permutations
+
+In this assignment we want to build a library to generate smooth permutations. Given a list of integers `xs` and an integer `d`, a _smooth permutation of `xs` with maximum distance `d`_ is a permutation in which the difference of any two consecutive elements is at most `d`. A naïve implementation just generates all the permutations of a list,
 
 ```haskell
-class Functor f where
-  fmap :: (a -> b) -> f a -> f b
+split []     = []
+split (x:xs) = (x, xs) : [(y, x:ys) | (y, ys) <- split xs]
 
-class Functor f => Applicative f where
-  pure :: a -> f a
-  (<*>) :: f (a -> b) -> f a -> f b
-  
-class Applicative f => Monad f where
-  return :: a -> f a
-  (>>=) :: f a -> (a -> f b) -> f b
+perms []     = [[]]
+perms xs     = [(v:p) | (v, vs) <- split xs, p <- perms vs]
 ```
 
-Give instances for all three classes for the following data types:
+and then filters out those which are smooth,
+
+```haskell
+smooth n (x:y:ys) = abs (y - x) < n && smooth n (y:ys)
+smooth _ _        = True
+
+smoothPerms :: Int -> [Int] -> [[Int]]
+smoothPerms n xs = filter (smooth n) (perms xs)
+```
+
+**Exercise 1:** *Packaging and documentation*
+
+1. Create a library `smoothies` which exports `perms` and `smoothPerms` from a module `SmoothPermsSlow`. You should be able to install the package by just running `cabal install` in it.
+2. Document the exported functions using [Haddock](http://haskell-haddock.readthedocs.io/en/latest/index.html).
+
+**Exercise 2:** *Testsuite*
+
+1. Write a `SmothPermsTest` module with a comprehensive set of properties to check that `smoothPerms` works correctly.
+2. Integrate your testsuite with Cabal using `tasty` ([here is how you do so](https://github.com/feuerbach/tasty#project-organization-and-integration-with-cabal)).
+
+**Exercise 3:** *Implementation with trees*
+
+The initial implementation of `smoothPerms` is very expensive. A better approach is to build a tree, for which it holds that each path from the root to a leaf corresponds to one of the possible permutations, next prune this tree such that only smooth paths are represented, and finally use this tree to generate all the smooth permutations from. Expose this new implementation in a new `SmoothPermsTree` module.
+
+1. Define a data type `PermTree` to represented a permutation tree.
+2. Define a function `listToPermTree` which maps a list onto this tree.
+3. Define a function `permTreeToPerms` which generates all permutations represented by a tree.
+
+    At this point the `perms` functions given above should be the composition of `listToPermTree` and `permTreeToPerms`.
+
+4. Define a function `pruneSmooth`, which leaves only smooth permutations in the tree.
+5. Redefine the function `smoothPerms`.
+
+Integrate this module in the testsuite you developed in the previous exercise.
+
+**Exercise 4:** *Unfolds*
+
+Recall the definition of `unfoldr` for lists,
+
+```haskell
+unfoldr :: (s -> Maybe (a, s)) -> s -> [a]
+unfoldr next x = case next x of
+                   Nothing     -> []
+                   Just (y, r) -> y : unfoldr next r
+```
+
+We can define an unfold function for binary trees as well:
 
 ```haskell
 data Tree a = Leaf a | Node (Tree a) (Tree a)
+            deriving Show
 
-data RoseTree a = RoseNode a [RoseTree a] | RoseLeaf
+unfoldTree :: (s -> Either a (s, s)) -> s -> Tree a
+unfoldTree next x = case next x of
+                      Left  y      -> Leaf y
+                      Right (l, r) -> Node (unfoldTree next l) (unfoldTree next r)
 ```
 
-#### Foldable and traversable
+Define the following functions in a new module `UnfoldUtils`, which should *not* be exposed by your package. Define the functions using `unfoldr` or `unfoldTree`, as required.
 
-Also give instances for the `Foldable` and `Traversable` classes, 
-whenever possible:
+1. `iterate :: (a -> a) -> a -> [a]`. The call `iterate f x` generates the infinite list `[x, f x, f (f x), ...]`.
+2. `map :: (a -> b) -> [a] -> [b]`.
+3. `balanced :: Int -> Tree ()`, which generates a balanced binary tree of the given height.
+4. `sized :: Int -> Tree Int`, which generates any tree with the given number of nodes. Each leaf in the returned tree should have a unique label.
 
-```haskell
-class Foldable t where
-  foldMap :: Monoid m => (a -> m) -> t a -> m 
-  
-class Traversable t where
-  traverse :: Applicative f => (a -> f b) -> t a -> f (t b) 
-```
+Define a new module `SmoothPermsUnfold` with an `unfoldPermTree` function which generates a `PermTree` as defined in the previous exercise. Then use that `unfoldPermTree` to implement a new version of `listToPermTree` and `smoothPerms`.
 
-#### Maps and keys
+**(Optional)** Write the following proofs as comments in the `UnfoldUtils` module.
 
-Using only methods from the above type classes and `lookup`, show how to
-define the following function:
+1. Prove using induction and equational reasoning that the version of `map` you defined using `unfoldr` coincides with the definition of `map` by recursion.
+2. We define the `size` of a binary tree as the number of internal nodes.
 
-```haskell
-lookupAll :: Ord k => [k] -> Data.Map k v -> Maybe [v]
-```
+    ```haskell
+    size (Leaf _)   = 0
+    size (Node l r) = 1 + size l + size r
+    ```
 
-This should return `Just vs` if all the argument keys occur in the
-map, and `Nothing` otherwise.
+    What is the `size` of a balanced tree as generated by `balanced`? Prove your result using induction and equational reasoning.
 
-Also define the following variant:
+**Exercise 5:** *Performance*
 
-```haskell
-lookupSome :: Ord k => [k] -> Data.Map k v -> [v]
-```
+1. Use the `criterion` package to make and run benchmarks for the given naïve
+    solution and the implementations using trees and unfolds,
+    in order to find out whether your solution really gives higher performance.
+2. Use heap profiles to analyse and draw conclusions about the differences.
 
-that returns the list of values for which a key exists. You may want
-to use functions from `Data.Maybe` to complete this definition.
+<!-- ### Heap profiles -->
 
-#### Filter
+<!-- **Exercise 1:** Generate heap profiles for the following functions: -->
 
-Use `foldMap` to define a generic filter function:
+<!-- ```haskell -->
+<!-- rev  = foldl (flip (:)) [] -->
+<!-- rev' = foldr (\x r -> r ++ [x]) [] -->
+<!-- ``` -->
 
-```haskell
-gfilter :: Foldable f => (a -> Bool) -> f a -> [a]
-```
+<!-- by using them as function `f` in a main program as follows -->
 
-### Monads for a gambling game
+<!-- ```haskell -->
+<!-- main = print $ f [1 .. 1000000] -->
+<!-- ``` -->
 
-Here's a game I like to play:  I toss a coin six times and count the number of
-heads I see, then I roll a dice; if the number of eyes on the dice is greater
-than or equal to the number of heads I counted then I win, else I lose. 
-As I'm somewhat of a sore loser, I'd  like to know my chances of winning
-beforehand, though. There are three ways to compute this probability:
+<!-- (adapt the size of 1000000 according to the speed of your machine to get good -->
+<!-- results). Interpret and try to explain the results! -->
 
-1. Use a pen, paper (or, if you prefer, chalk and a blackboard) and some basic
-   discrete probability theory to calculate the probability directly.
-2. Draw or compute the complete decision tree of the game and count the number
-   of wins and losses.
-3. Write a computer program that simulates the game to approximate the probability.
+<!-- **Exercise 2:** Do the same for -->
 
-We'll leave the first option to the mathematicians and focus on the second and
-third possibilities. In fact, using monads, we'll see how both can be done at
-the same time.
+<!-- ```haskell -->
+<!-- conc xs ys = foldr (:) ys xs -->
+<!-- conc'      = foldl (\k x -> k . (x:)) id -->
+<!-- ``` -->
 
-#### The `Gambling` Monad
+<!-- with -->
 
-Modeling a coin and a dice in Haskell shouldn't pose much difficulty for you:
+<!-- ```haskell -->
+<!-- main = print $ f [1 .. 1000000] [1 .. 1000000] -->
+<!-- ``` -->
 
-```haskell
-data Coin    = H | T
-data Dice    = D1 | D2 | D3 | D4 | D5 | D6
-data Outcome = Win | Lose
-```
+<!-- **Exercise 3:** Finally, have a look at -->
 
-The tossing of a `Coin` and rolling of a `Dice` is given by the monadic interface
-`MonadGamble`:
+<!-- ```haskell -->
+<!-- f1 = let xs == [1 .. 1000000] in if length xs > 0 then head xs else 0 -->
+<!-- f2 = if length [1 .. 1000000] > 0 then head [1 .. 1000000] else 0 -->
+<!-- ``` -->
 
-```haskell
-class Monad m => MonadGamble m where
-  toss :: m Coin
-  roll :: m Dice
-```
+<!-- ### Forcing evaluation -->
 
-**Exercise 1:** Write a function `game :: MonadGamble m => m Outcome`
-that implements the game above. Read the description of the game very carefully:
-it is easy to make an off-by-one error; furthermore, as tossing and rolling are
-side-effects the order in which you perform them matters.
+<!-- Write a function -->
 
-#### Simulation
+<!-- ```haskell -->
+<!-- forceBoolList :: [Bool] -> r -> r -->
+<!-- ``` -->
 
-Simulating probabilistic events requires a (pseudo)random number generator.
-Haskell has one available in the `System.Random` library. Random number
-generators need to have access to a piece of state called the seed, as such
-the random number generator runs in a monad, the `IO` monad to be exact.
+<!-- that completely forces a list of booleans without using `seq`.  -->
+<!-- Note that pattern matching drives evaluation. -->
 
-**Exercise 2:** Give `Random` instances for `Coin` and `Dice`.
+<!-- Explain why the function `forceBoolList` has the type as specified above and not -->
 
-**Exercise 3:** Give a `MonadGamble` instance for the `IO` monad.
+<!-- ```haskell -->
+<!-- forceBoolList :: [Bool] -> [Bool] -->
+<!-- ``` -->
 
-**Exercise 4:** Write a function
+<!-- and why `seq` is defined as it is, and -->
 
-```haskell
-simulate :: IO Outcome -> Integer -> IO Rational
-```
+<!-- ```haskell -->
+<!-- force :: a -> a -->
+<!-- force a = seq a a -->
+<!-- ``` -->
 
-that runs a game of chance (given as the first parameter, not necessarily the
-game implemented in Exercise 1) $n$ times($n > 0$, the second parameter)
-and returns the fraction of games won. You can now approximate to probability
-of winning using `simulate game 10000`.
-Would you care to take a guess what the exact probability of winning is?
-
-#### Decision trees
-One drawback of simulation is that the answer is only approximate.  We can
-obtain an exact answer using decision trees. Decision trees of probabilistic
-games can be modeled as:
-
-```haskell
-data DecisionTree a = Result a | Decision [DecisionTree a]
-```
-
-In the leaves we store the result and in each branch we can take one of several
-possibilities. As we don't store the probabilities of each decision, we'll have
-to assume they are uniformly distributed (i.e., each possibility has an equally
-great possibility of being taken). Fortunately for us, both fair coins and fair
-dice produce a uniform distribution.
-
-**Exercise 5:** Give a `Monad` instance for `DecisionTree`. (Hint: use the types
-of `(>>=)` and `return` for guidance: it's the most straightforward,
-type-correct definition that isn't an infinite loop.
-
-**Exercise 6:** Give a `MonadGamble` instance for `DecisionTree`.
-
-**Exercise 7:** Write a function
-
-```haskell
-probabilityOfWinning :: DecisionTree Outcome -> Rational
-```
-
-that, given a decision tree, computes the probability of winning. You can find
-the exact probability of winning using `probabilityOfWinning game`. Was
-your earlier guess correct? If you know a bit of probability theory, you can
-double check the correctness by doing the pen-and-paper calculation suggested above.
-Note that we used the same implementation of `game` to obtain both an approximate and
-an exact answer.
-
-### Instrumented `State` monad
-
-A state monad is monad with additional monadic operations `get` and `put`:
-
-```haskell
-class Monad m => MonadState m s | m -> s where
-  get    ::             m s
-  put    :: s        -> m ()
-  modify :: (s -> s) -> m s
-```
-
-Apart from the usual three monad laws, state monads should also satisfy:
-
-```haskell
-put s1 >> put s2               == put s2
-put s  >> get                  == put s >> return s
-get    >>= put                 == return ()
-get    >>= (\s -> get >>= k s) == get >>= (\s -> k s s)
-```
-
-Check to see if you understand what these four laws say and if they make sense.
-
-**Exercise 1:** Give default implementations of `get` and `put` in terms of
-`modify`, and a default implementation of `modify` in terms of `get` and `put`.
-
-#### Instrumentation
-
-We are now going to define our own, slightly modified state monad that, besides
-keeping track of a piece of state, has also been instrumented to count the
-number of `(>>=)`, `return`, `get` and `put` operations that have been performed
-during a monadic computation. The counts are given by the type:
-
-```haskell
-data Counts = Counts { binds   :: Int
-                     , returns :: Int
-                     , gets    :: Int
-                     , puts    :: Int
-                     }
-```
-
-**Exercise 2:** As a convenience, give a `Monoid` instance for `Count`
-that sums the counts pairwise. Define constants
-
-```haskell
-oneBind, oneReturn, oneGet, onePut :: Counts
-```
-
-that represent a count of one `(>>=)`, `return`, `get` and `put` operation,
-respectively.
-
-Our state transformer is now given by:
-
-```haskell
-newtype State' s a = State' { runState' :: (s, Counts) -> (a, s, Counts) }
-```
-
-In addition to the usual state `s`, we keep track of the `Counts`
-as an internal piece of state that is not exposed through the `get`
-and `put` interface.
-
-**Exercise 3:** Give `Monad` and `MonadState` instances for `State'`
-that count the number of `(>>=)`, `return`, `get` and `put` operations.
-
-#### Tree labeling
-
-Here is a data type for binary trees that store values on the internal nodes only.
-
-```haskell
-data Tree a = Branch (Tree a) a (Tree a) | Leaf
-```
-
-**Exercise 4:** Write a function
-
-```haskell
-label :: MonadState m Int => Tree a -> m (Tree (Int, a))
-```
-
-that labels a tree with integers increasingly, using a depth-first in-order traversal.
-
-**Exercise 5:** Write a function
-
-```haskell
-run :: State' s a -> s -> (a, Counts)
-```
-
-that runs a state monadic computation in the instrumented state monad, given
-some initial state of type `s`, and returns the computed value and the number of
- operations counted. For example, the expression
-
-```haskell
-let tree = Branch (Branch Leaf "B" Leaf) "A" Leaf
-in  run (label tree) 42
-```
-
-should evaluate to
-
-```haskell
-( Branch (Branch Leaf (42, "B") Leaf) (43, "A") Leaf
-, Counts { binds = 10, returns = 5, gets = 4, puts = 2 } )
-```
-
-### Parsing with error messages
-
-Instead of *backtracking* parsers covered in the lectures,
-we can also define the following parser type:
-
-```haskell
-newtype ErrorMsg = ErrorMsg String
-newtype Parser a = Parser (String -> Either ErrorMsg (a,String))
-```
-
-A parser consists of a function that reads from a `String` to produce
-either an error message or a result of type `a` and the remaining
-`String` that has not been parsed. This parser type does not allow
-*backtracking* and is less expressive than the list-based parsers.
-
-**Exercise 1:** 
-Write the `Functor`, `Applicative`, `Monad`, and `Alternative` instances
-for the parser type above.
-
-**Exercise 2:**
-Describe the `Parser` type as a series of monad transformers.
-
-### Teletype IO
-
-Consider the following data type:
-
-```haskell
-data Teletype a = End a
-                | Get (Char -> Teletype a)
-                | Put Char (Teletype a)
-```
-
-A value of type `Teletype` can be used to describe programs that read and write characters and return a final result of type `a`. Such a program can end immediately (`End`).  If it reads a character, the rest of the program is described as a function depending on this character (`Get`).  If the program writes a character (`Put`), the value to show and the rest of the program are recorded.
-
-For example, the following expression describes a program that continuously echo characters:
-
-```haskell
-echo = Get (\c -> Put c echo)
-```
-
-**Exercise 1.** Write a `Teletype`-program `getLine` which reads characters until it finds a newline character, and returns the complete string.
-
-A map function for `Teletype` can be defined as follows:
-
-```haskell
-instance Functor Teletype where
-  fmap f (End x)   = End (f x)
-  fmap f (Get g)   = Get (fmap f . g)
-  fmap f (Put c x) = Put c (fmap f x)
-```
-
-**Exercise 2.** Define sensible `Applicative` and `Monad` instances for `Teletype`.
-
-The definition of `Teletype` is not directly compatible with `do` notation. Usually, you have `getChar` and `putChar` primitives which allow you to write instead:
-
-```haskell
-echo = do c <- getChar
-          putChar c
-          echo
-```
-
-**Exercise 3.** Define those functions `getChar :: Teletype Char` and `putChar :: Char -> Teletype ()`.
-
-**Exercise 4.** Define a [`MonadState`](https://hackage.haskell.org/package/mtl/docs/Control-Monad-State-Class.html#t:MonadState) instance for `Teletype`. How is the behavior of this instance different from the usual `State` type?
-
-**Exercise 5.** A `Teletype`-program can be thought as a description of an interaction with the console. Write a function `runConsole :: Teletype a -> IO a` which runs a `Teletype`-program in the `IO` monad. A `Get` should read a character from the console and `Put` should write a character to the console.
-
-One of the advantages of separating the description of `Teletype`-programs from their executions is that we can *interpret* them in different ways. For example, the communication might take place throught a network instead of console. Or we could mock user input and output for testing purposes.
-
-**Exercise 6.** Write an interpretation of a `Teletype`-program into the monad `RWS [Char] () [Char]` ([documentation](https://hackage.haskell.org/package/transformers/docs/Control-Monad-Trans-RWS-Lazy.html)). In other words, write a function,
-
-```haskell
-type TeletypeRW = RWS [Char] () [Char]
-runRWS :: Teletype a -> TeletypeRW a
-```
-
-Using it, write a function `mockConsole :: Teletype a -> [Char] -> (a, [Char])`.
+<!-- is useless. -->
