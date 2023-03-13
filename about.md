@@ -24,9 +24,9 @@ The summer school consists of a mix of lectures, labs and a busy
 social program. You may want to check out the preliminary
 [schedule](schedule.html) to get some idea of what to expect.
 
-The school will run from 04 July &ndash; 08 July 2022.
+The school will run from 03 July &ndash; 07 July 2022.
 
-We kindly ask to register **before June 17th**.
+We kindly ask to register **before June 15th**.
 
 #### For whom
 
