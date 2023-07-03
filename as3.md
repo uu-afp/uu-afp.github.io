@@ -263,40 +263,40 @@ we cannot make `Square` an instance of the class `Functor`.
 
 **Exercise 5.** Why is this restriction in place? Try to find problems arising from partially applied type synonyms, and describe them (as concisely as possible) with a few examples.
 
-## Generic parsing
+<!-- ## Generic parsing -->
 
-Haskell's `Show` and `Read` classes provide an easy way to display and
-parse user-defined data structures.
+<!-- Haskell's `Show` and `Read` classes provide an easy way to display and -->
+<!-- parse user-defined data structures. -->
 
-Use GHC Generics and some parsing library (`uuparsinglib`, `attoparsec`
-or `parsec`),  define a *generic*
-`Parse` class. You may want to have a look at `Generic.Deriving.Show`
-to see how a generic `Show` instance can be derived. 
+<!-- Use GHC Generics and some parsing library (`uuparsinglib`, `attoparsec` -->
+<!-- or `parsec`),  define a *generic* -->
+<!-- `Parse` class. You may want to have a look at `Generic.Deriving.Show` -->
+<!-- to see how a generic `Show` instance can be derived.  -->
 
-Writing a generic read for all possible constructs is not feasible,
-but try to cover as much of the language as you can.
+<!-- Writing a generic read for all possible constructs is not feasible, -->
+<!-- but try to cover as much of the language as you can. -->
 
-* Start by handling only "basic" ADTs. To make it more precise, this means that it works for:
+<!-- * Start by handling only "basic" ADTs. To make it more precise, this means that it works for: -->
 
-    ```haskell
-    data Bool    = True | False
-    data IntTree = Leaf Int | Node IntTree IntTree
-    ```
+<!--     ```haskell -->
+<!--     data Bool    = True | False -->
+<!--     data IntTree = Leaf Int | Node IntTree IntTree -->
+<!--     ``` -->
 
-* Then take fixity of operators is taken into account.
-    To make it more precise, that means that the parser can handle
-    `Leaf 1 :|: (Leaf 2 :|: Leaf 3)` when `IntTree` is declared as:
+<!-- * Then take fixity of operators is taken into account. -->
+<!--     To make it more precise, that means that the parser can handle -->
+<!--     `Leaf 1 :|: (Leaf 2 :|: Leaf 3)` when `IntTree` is declared as: -->
 
-    ```haskell
-    data IntTree = Leaf Int | IntTree :|: IntTree
-    ```
+<!--     ```haskell -->
+<!--     data IntTree = Leaf Int | IntTree :|: IntTree -->
+<!--     ``` -->
 
-* Finally, support record labels.
-    To make it more precise, that means that the parser can handle
-    `Number { n = 1 }`  for a data type declared as:
+<!-- * Finally, support record labels. -->
+<!--     To make it more precise, that means that the parser can handle -->
+<!--     `Number { n = 1 }`  for a data type declared as: -->
 
-    ```haskell
-    data Number = Number { n :: Int }
-    ```
+<!--     ```haskell -->
+<!--     data Number = Number { n :: Int } -->
+<!--     ``` -->
 
-What cases cannot be handled without backtracking?
+<!-- What cases cannot be handled without backtracking? -->

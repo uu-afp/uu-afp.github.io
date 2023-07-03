@@ -48,7 +48,7 @@ smoothPerms n xs = filter (smooth n) (perms xs)
 
 **Exercise 1:** *Packaging and documentation*
 
-1. Create a library `smoothies` which exports `perms` and `smoothPerms` from a module `SmoothPermsSlow`. You should be able to install the package by just running `cabal install` in it.
+1. Create a library `smoothies` which exports `perms` and `smoothPerms` from a module `SmoothPermsSlow`. You should be able to build the package by just running `cabal build` in the top level directory.
 2. Document the exported functions using [Haddock](http://haskell-haddock.readthedocs.io/en/latest/index.html).
 
 **Exercise 2:** *Testsuite*
