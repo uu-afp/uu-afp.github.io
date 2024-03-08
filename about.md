@@ -24,9 +24,9 @@ The summer school consists of a mix of lectures, labs and a busy
 social program. You may want to check out the preliminary
 [schedule](schedule.html) to get some idea of what to expect.
 
-The school will run from 03 July &ndash; 07 July 2022.
+The school will run from 08 July &ndash; 12 July 2024.
 
-We kindly ask to register **before June 15th**.
+We kindly ask to register **before June 1st**.
 
 #### For whom
 
@@ -61,7 +61,7 @@ discounted rate or a fee waiver.
 
 #### Questions?
 
-Feel free to contact Wouter Swierstra (w.s.swierstra {at} uu.nl) if
+Feel free to contact Gabriele Kelle (g.k.keller {at} uu.nl) if
 you have any questions about participating.
 
 
