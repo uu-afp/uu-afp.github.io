@@ -134,7 +134,10 @@ Haskell has one available in the `System.Random` library. Random number
 generators need to have access to a piece of state called the seed, as such
 the random number generator runs in a monad, the `IO` monad to be exact.
 
-**Exercise 2:** Give `Random` instances for `Coin` and `Dice`.
+**Exercise 2:** Give `Random` instances for `Coin` and `Dice`. (The `Random`
+class has been largely superseded by other classes in the `random` package with
+a different design, but `Random` is more low-tech and sufficient for our
+purposes.)
 
 **Exercise 3:** Give a `MonadGamble` instance for the `IO` monad.
 
