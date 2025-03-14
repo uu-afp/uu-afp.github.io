@@ -31,9 +31,9 @@ the lecturers if you're unsure about your prerequisites.
 
 #### How do I apply for the student discount?
 
-When you register, be sure to use your university email address. Be sure
+When you register, please use your university email address. Be sure
 to add a note that you are entitled to the discount. If you are charged
-the full price initiall, please contact the organizers to apply the
+the full price initially, contact the organizers to apply the
 discount for you.
 
 
