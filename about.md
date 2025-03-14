@@ -24,7 +24,7 @@ The summer school consists of a mix of lectures, labs and a busy
 social program. You may want to check out the preliminary
 [schedule](schedule.html) to get some idea of what to expect.
 
-The school will run from 08 July &ndash; 12 July 2024.
+The school will run from 07 July &ndash; 11 July 2025.
 
 We kindly ask to register **before June 1st**.
 
@@ -51,7 +51,7 @@ pandemic closely.
 
 #### Costs
 
-We charge a registration fee of €250 (for students) and €750 (for
+We charge a registration fee of €500 (for students) and €950 (for
 professionals). There is an additional housing fee of €200 euros, if
 you need accommodation in Utrecht. Note that this registration fee
 includes course materials, coffee, lunches and dinners throughout the
@@ -61,8 +61,8 @@ discounted rate or a fee waiver.
 
 #### Questions?
 
-Feel free to contact Gabriele Kelle (g.k.keller {at} uu.nl) if
-you have any questions about participating.
+Feel free to contact Wouter Swierstra (w.s.swierstra {at} uu.nl) if you
+have any questions about participating.
 
 
 
