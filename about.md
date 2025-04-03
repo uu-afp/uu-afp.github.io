@@ -66,7 +66,6 @@ have any questions about participating.
 
 
 
-<!-- #### Sponsorship -->
 
 <!-- We gratefully acknowledge Standard Chartered Bank and Jane Street -->
 <!-- Capital for their sponsorship. -->
