@@ -17,6 +17,9 @@ td, th {
 }
 
 table {border-spacing: 2px;}
+tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
 
 /* CUSTOMIZE THE NAVBAR
 -------------------------------------------------- */
